@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rihalaah_app_admin/Helpers/session_helper.dart';
+import 'package:rihalaah_app_admin/Screens/Auth%20screen/login.dart';
 import 'package:rihalaah_app_admin/Screens/Navigation%20Bar%20Screens/edit_profile.dart';
 
 class Settings extends StatefulWidget {
@@ -11,7 +12,6 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   bool _notificationsEnabled = true;
-
   String? adminName;
   String? adminEmail;
   String? adminPicture;
@@ -71,7 +71,6 @@ class _SettingsState extends State<Settings> {
                   ],
                 ),
               ),
-
               SizedBox(height: screenHeight * 0.02),
 
               // Profile Image with Shadow
@@ -102,9 +101,9 @@ class _SettingsState extends State<Settings> {
                           fit: BoxFit.cover),
                 ),
               ),
-
               SizedBox(height: screenHeight * 0.015),
 
+              // Admin Name
               Text(
                 adminName ?? 'Admin',
                 style: TextStyle(
@@ -112,6 +111,8 @@ class _SettingsState extends State<Settings> {
                   fontSize: 20 * textScale,
                 ),
               ),
+
+              // Admin Email
               Text(
                 adminEmail ?? 'admin@example.com',
                 style: TextStyle(
@@ -122,15 +123,11 @@ class _SettingsState extends State<Settings> {
 
               SizedBox(height: screenHeight * 0.015),
 
+              // Edit Profile Button
               ElevatedButton.icon(
-               onPressed: () async {
-  await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-  );
-  // 🔁 Reload session data when coming back from edit screen
-  _loadSessionData();
-},
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7D948D),
                   shape: RoundedRectangleBorder(
@@ -197,6 +194,7 @@ class _SettingsState extends State<Settings> {
                   child: ElevatedButton(
                     onPressed: () {
                       // logout logic will come later
+                      _logout();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF7D948D),
@@ -225,5 +223,40 @@ class _SettingsState extends State<Settings> {
         ),
       ),
     );
+  }
+  Future<void> _logout() async {
+    // Show confirmation dialog
+    bool? confirmLogout = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Are you sure you want to logout?'),
+          content: const Text('You will be logged out of your account.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);  // User pressed No
+              },
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);  // User pressed Yes
+              },
+              child: const Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If user confirmed, proceed with logout
+    if (confirmLogout == true) {
+      await SessionHelper.logout(); // Clears session
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()), // Redirect to login
+      );
+    }
   }
 }

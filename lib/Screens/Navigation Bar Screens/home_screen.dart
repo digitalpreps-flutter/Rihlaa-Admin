@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:rihalaah_app_admin/Helpers/session_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,6 +10,21 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? adminName;
+   @override
+  void initState() {
+    super.initState();
+    _loadSessionData();
+  }
+
+  Future<void> _loadSessionData() async {
+    final name = await SessionHelper.getAdminName();
+    final picture = await SessionHelper.getAdminPicture();
+
+    setState(() {
+      adminName = name;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                   Expanded(
                     child: Text.rich(
                       TextSpan(
                         children: [
@@ -42,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           TextSpan(
-                            text: "Maryam Fatima!",
+                            text: adminName ?? "Maryam Fatima!",
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,

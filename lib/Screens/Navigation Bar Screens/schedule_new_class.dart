@@ -62,7 +62,7 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
               _buildDropdown(
                 hint: "Type de classe",
                 value: selectedClassType,
-                items: ['classe d''hommes', 'classe de femmes'],
+                items: ['classe hommes', 'classe de femmes'],
                 onChanged: (val) => setState(() => selectedClassType = val),
               ),
               const SizedBox(height: 12),

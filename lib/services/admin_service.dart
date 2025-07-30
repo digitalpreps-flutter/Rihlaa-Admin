@@ -27,11 +27,14 @@ class AdminService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['status'] == true) {
-        // ✅ Update session data with new values
+        // ✅ Get the existing email from session and save updated values
+        final email = await SessionHelper.getAdminEmail();  // Await the email fetch
+
+        // ✅ Update session data with new values (only name and picture)
         await SessionHelper.saveAdminSession(
           id: id,
           name: data['data']['admin_name'] ?? '',
-          email: data['data']['admin_email'] ?? '',
+          email: email ?? '',  // Keep existing email
           phone: data['data']['admin_phone'] ?? '',
           picture: data['data']['admin_picture'] ?? '',
           status: data['data']['status'] ?? '',
@@ -47,3 +50,5 @@ class AdminService {
     }
   }
 }
+
+

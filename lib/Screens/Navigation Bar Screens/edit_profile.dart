@@ -45,24 +45,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      var status = await Permission.camera.request();
-      if (!status.isGranted) return;
-    } else {
-      await Permission.photos.request(); // iOS
-      await Permission.storage.request(); // Android
-    }
-
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: source);
-    if (pickedImage != null) {
-      final bytes = await pickedImage.readAsBytes();
-      setState(() {
-        _imageFile = File(pickedImage.path);
-        _base64Image = base64Encode(bytes);
-      });
-    }
+  if (source == ImageSource.camera) {
+    var status = await Permission.camera.request();
+    if (!status.isGranted) return;
+  } else {
+    await Permission.photos.request(); // iOS
+    await Permission.storage.request(); // Android
   }
+
+  final picker = ImagePicker();
+  final pickedImage = await picker.pickImage(source: source);
+  if (pickedImage != null) {
+    final bytes = await pickedImage.readAsBytes();
+    setState(() {
+      _imageFile = File(pickedImage.path);
+      _base64Image = base64Encode(bytes);  // Ensure the image is in base64 format
+    });
+  }
+}
+
 
   void _showImagePickerOptions() {
     showModalBottomSheet(
