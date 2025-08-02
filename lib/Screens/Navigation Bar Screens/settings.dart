@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rihalaah_app_admin/Helpers/session_helper.dart';
-import 'package:rihalaah_app_admin/Screens/Auth%20screen/login.dart';
-import 'package:rihalaah_app_admin/Screens/Navigation%20Bar%20Screens/edit_profile.dart';
+import '../Auth screen/login.dart';
+import 'edit_profile.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -89,15 +89,7 @@ class _SettingsState extends State<Settings> {
                   ],
                 ),
                 child: ClipOval(
-                  child: adminPicture != null && adminPicture!.isNotEmpty
-                      ? Image.network(
-                          adminPicture!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/images/Ellipse_26.png',
-                              fit: BoxFit.cover),
-                        )
-                      : Image.asset('assets/images/Ellipse_26.png',
+                  child: Image.asset('assets/images/Ellipse_26.png',
                           fit: BoxFit.cover),
                 ),
               ),

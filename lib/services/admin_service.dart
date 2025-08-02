@@ -10,15 +10,19 @@ class AdminService {
   }) async {
     final url = Uri.parse('https://rihlaaapp.fr/api/admin/edit_profile');
 
+    final body = jsonEncode({
+      "admin_id": id,
+      "admin_name": name,
+      "admin_picture": base64Image,
+    });
+
+    print("📤 Request Body: $body");
+
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "admin_id": id,
-          "admin_name": name,
-          "admin_picture": base64Image,
-        }),
+        body: body,
       );
 
       print("📡 Edit Profile Status: ${response.statusCode}");
@@ -50,5 +54,4 @@ class AdminService {
     }
   }
 }
-
 

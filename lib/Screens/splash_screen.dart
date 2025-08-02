@@ -1,7 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:rihalaah_app_admin/Helpers/session_helper.dart';
 import 'package:rihalaah_app_admin/Screens/Auth%20screen/login.dart';
+import 'package:rihalaah_app_admin/Screens/Navigation%20Bar%20Screens/bottom_nav_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,11 +15,26 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 3),
-            (){
-          Navigator.push(context, MaterialPageRoute(builder: (ctx)=> LoginScreen()));
-        });
+    _navigate();
   }
+
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 2)); // Delay for splash effect
+
+    final isLoggedIn = await SessionHelper.isLoggedIn();
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => isLoggedIn
+            ?  BottomNavScreen()
+            : LoginScreen(), // or your actual login screen
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {

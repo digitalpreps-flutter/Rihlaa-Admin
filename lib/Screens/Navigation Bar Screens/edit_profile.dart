@@ -30,17 +30,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _loadSessionData() async {
     final name = await SessionHelper.getAdminName();
-    final picture = await SessionHelper.getAdminPicture();
+    // final picture = "https://dummyimage.com/600x400/000/fff";
     final prefs = await SharedPreferences.getInstance();
     final id = prefs.getInt('admin_id');
 
     setState(() {
       _nameController.text = name ?? '';
       _adminId = id;
-      if (picture != null && picture.isNotEmpty) {
-        _imageFile = File(''); // Dummy file for rendering
-        _base64Image = picture;
-      }
+      // if (picture != null && picture.isNotEmpty) {
+      //   _imageFile = File(''); // Dummy file for rendering
+      //   _base64Image = picture;
+      // }
     });
   }
 
@@ -106,6 +106,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     setState(() => _isLoading = true);
+
+    print("_base64Image $_base64Image");
 
     final success = await AdminService.updateProfile(
       id: _adminId!,
