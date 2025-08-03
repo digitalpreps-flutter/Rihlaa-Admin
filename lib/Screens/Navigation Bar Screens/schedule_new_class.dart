@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:rihalaah_app_admin/services/schedule_service.dart';
 
 class ScheduleNewClassScreen extends StatefulWidget {
   const ScheduleNewClassScreen({super.key});
@@ -9,18 +10,43 @@ class ScheduleNewClassScreen extends StatefulWidget {
 }
 
 class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
-  String? selectedClassType;
-  String? selectedSubject;
+  List<dynamic> classTypes = [];
+  List<dynamic> subjects = [];
+
+  String? selectedClassTypeId;
+  String? selectedSubjectId;
   DateTime? selectedDate;
-  TimeOfDay? startTime;
-  TimeOfDay? endTime;
+  TimeOfDay? selectedTime;
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController durationController = TextEditingController();
 
   final borderRadius = const BorderRadius.all(Radius.circular(10));
   final gray = const Color(0xFFCDCDCD);
   final green = const Color(0xFF7D948D);
+
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchClassTypes();
+  }
+
+  Future<void> fetchClassTypes() async {
+    final data = await ScheduleService.getClassTypes();
+    setState(() {
+      classTypes = data;
+    });
+  }
+
+  Future<void> fetchSubjects(String classId) async {
+    final data = await ScheduleService.getSubjects(classId);
+    setState(() {
+      subjects = data;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,13 +63,13 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
                 children: [
                   Container(
                     width: 32,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new, size: 16),
-                      onPressed: () {},
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -61,18 +87,31 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
               // ── Class Type Dropdown ───────────────
               _buildDropdown(
                 hint: "Type de classe",
-                value: selectedClassType,
-                items: ['classe hommes', 'classe de femmes'],
-                onChanged: (val) => setState(() => selectedClassType = val),
+                value: selectedClassTypeId,
+                items: classTypes,
+                getLabel: (e) => e['class_type'],
+                getValue: (e) => e['class_id'].toString(),
+                onChanged: (val) {
+                  setState(() {
+                    selectedClassTypeId = val;
+                    selectedSubjectId = null;
+                    subjects = [];
+                  });
+                  fetchSubjects(val!);
+                },
               ),
               const SizedBox(height: 12),
 
               // ── Subject Dropdown ──────────────────
               _buildDropdown(
                 hint: "Sujet",
-                value: selectedSubject,
-                items: ['Fiqh', 'Hadith', 'Tafsir'],
-                onChanged: (val) => setState(() => selectedSubject = val),
+                value: selectedSubjectId,
+                items: subjects,
+                getLabel: (e) => e['subject_name'],
+                getValue: (e) => e['subject_id'].toString(),
+                onChanged: (val) {
+                  setState(() => selectedSubjectId = val);
+                },
               ),
               const SizedBox(height: 12),
 
@@ -95,43 +134,34 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
               ),
               const SizedBox(height: 12),
 
-              // ── Start/End Time ────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _pickTime(isStart: true),
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          decoration: _inputDecoration(
-                            hint: startTime == null
-                                ? "Heure de début"
-                                : startTime!.format(context),
-                          ),
-                        ),
+              // ── Time Picker ───────────────────────
+              GestureDetector(
+                onTap: _pickTime,
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: _inputDecoration(
+                      hint: selectedTime == null
+                          ? "Heure"
+                          : selectedTime!.format(context),
+                      suffixIcon: const Icon(
+                        Icons.access_time,
+                        color: Color(0xFF7D948D),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _pickTime(isStart: false),
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          decoration: _inputDecoration(
-                            hint: endTime == null
-                                ? "Heure de fin"
-                                : endTime!.format(context),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
-              // ── Meeting Title ─────────────────────
+              // ── Duration Field ─────────────────────
+              TextFormField(
+                controller: durationController,
+                keyboardType: TextInputType.number,
+                decoration: _inputDecoration(hint: "Durée (minutes)"),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Title ──────────────────────────────
               TextFormField(
                 controller: titleController,
                 decoration: _inputDecoration(hint: "Titre de la réunion"),
@@ -155,17 +185,17 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
                     backgroundColor: green,
                     shape: RoundedRectangleBorder(borderRadius: borderRadius),
                   ),
-                  onPressed: () {
-                    // TODO: Handle submission
-                  },
-                  child: const Text(
-                    "Programmer le cours",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  onPressed: isLoading ? null : _submitSchedule,
+                  child: isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Programmer le cours",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -175,7 +205,79 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
     );
   }
 
-  // ────────────────────── Helpers ─────────────────────────────
+  // ────────────────────── Logic ─────────────────────────────
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked != null) setState(() => selectedDate = picked);
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null) setState(() => selectedTime = picked);
+  }
+
+Future<void> _submitSchedule() async {
+  // ── Validate Inputs ──
+  if (selectedClassTypeId == null ||
+      selectedSubjectId == null ||
+      selectedDate == null ||
+      selectedTime == null ||
+      titleController.text.isEmpty ||
+      descriptionController.text.isEmpty ||
+      durationController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Veuillez remplir tous les champs.")),
+    );
+    return;
+  }
+
+  setState(() => isLoading = true);
+
+  // ── Convert Time to 24-Hour Format ──
+  final formattedTime =
+      "${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}";
+
+  // ── Call API ──
+  final response = await ScheduleService.scheduleClass(
+    topicName: titleController.text.trim(),
+    topicDescription: descriptionController.text.trim(),
+    duration: durationController.text.trim(),
+    date: DateFormat('yyyy-MM-dd').format(selectedDate!),
+    time: formattedTime,
+    subjectId: selectedSubjectId!,
+    classTypeId: selectedClassTypeId!,
+  );
+
+  setState(() => isLoading = false);
+
+  // ── Handle API Response ──
+  if (response['status'] == true || response['success'] == true) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Cours programmé avec succès!")),
+  );
+  Navigator.pop(context); // or clear form
+} else {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text("Erreur: ${response['message'] ?? 'Une erreur est survenue'}"),
+    ),
+  );
+}
+
+}
+
+
+  // ────────────────────── UI Helpers ────────────────────────
 
   InputDecoration _inputDecoration({required String hint, Widget? suffixIcon}) {
     return InputDecoration(
@@ -197,7 +299,9 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
   Widget _buildDropdown({
     required String hint,
     required String? value,
-    required List<String> items,
+    required List<dynamic> items,
+    required String Function(dynamic) getLabel,
+    required String Function(dynamic) getValue,
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
@@ -207,76 +311,12 @@ class _ScheduleNewClassScreenState extends State<ScheduleNewClassScreen> {
       dropdownColor: Colors.white,
       style: const TextStyle(color: Colors.black),
       items: items
-          .map((e) => DropdownMenuItem(
-                value: e,
-                child: Text(e),
+          .map((item) => DropdownMenuItem(
+                value: getValue(item),
+                child: Text(getLabel(item)),
               ))
           .toList(),
       onChanged: onChanged,
     );
-  }
-
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: DateTime(now.year + 1),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            dialogBackgroundColor: Colors.white,
-            colorScheme: ColorScheme.light(
-              primary: green,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: green,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) setState(() => selectedDate = picked);
-  }
-
-  Future<void> _pickTime({required bool isStart}) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (BuildContext context, Widget? child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            dialogBackgroundColor: Colors.white,
-            colorScheme: ColorScheme.light(
-              primary: green,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: green,
-              ),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        if (isStart) {
-          startTime = picked;
-        } else {
-          endTime = picked;
-        }
-      });
-    }
   }
 }
